@@ -1,0 +1,9 @@
+{
+    "DESIGN_NAME": "top",
+    "VERILOG_FILES": [
+        "dir::../../rtl/sram.sv",
+        "dir::../../rtl/top.sv"
+    ],
+    "CLOCK_PERIOD": 20,
+    "CLOCK_PORT": "clk"
+}

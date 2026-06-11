@@ -1,0 +1,43 @@
+# Simulation output
+*.vcd
+*.vvp
+*.lxt
+*.dump
+build/
+sim/build/
+work/
+obj_dir/
+*.o
+*.mk
+
+# OpenLane / ASIC tool output
+runs/
+results/
+reports/
+logs/
+*.v
+
+# Synthesis and P&R intermediates
+*.edf
+*.def
+*.lef
+*.lib
+*.db
+*.sdf
+*.spef
+*.gds
+*.oas
+*.mag
+*.spice
+*.cdl
+
+# Editor files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
