@@ -16,7 +16,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Install simulation tools
         run: |
@@ -37,10 +37,10 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.12"
 
@@ -49,11 +49,11 @@ jobs:
 
       - name: Run LibreLane flow
         working-directory: syn/librelane
-        run: bash build.sh
+        run: script -q -e -c "bash build.sh" /dev/null
 
       - name: Upload LibreLane run artifacts
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: librelane-runs
           path: syn/librelane/runs/
