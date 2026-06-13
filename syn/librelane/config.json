@@ -1,7 +1,8 @@
 {
     "DESIGN_NAME": "top",
     "VERILOG_FILES": [
-        "dir::../../rtl/sram.sv",
+        "dir::../../rtl/debounce.sv",
+        "dir::../../rtl/edge_detect.sv",
         "dir::../../rtl/top.sv"
     ],
     "CLOCK_PERIOD": 20,

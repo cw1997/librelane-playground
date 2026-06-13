@@ -1,11 +1,12 @@
 # ============================================================================
-# LibreLane Configuration — top (SRAM wrapper)
+# LibreLane Configuration — top (Traffic Light Controller)
 # ============================================================================
 
 set ::env(DESIGN_NAME) "top"
 
 set ::env(VERILOG_FILES) "\
-    $::env(DESIGN_DIR)/../../rtl/sram.sv \
+    $::env(DESIGN_DIR)/../../rtl/debounce.sv \
+    $::env(DESIGN_DIR)/../../rtl/edge_detect.sv \
     $::env(DESIGN_DIR)/../../rtl/top.sv"
 
 set ::env(CLOCK_PORT) "clk"

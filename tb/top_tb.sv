@@ -1,132 +1,106 @@
 // ============================================================================
-// Top — Self-checking testbench for parameterized SRAM wrapper
+// Top — Self-checking testbench for traffic light controller
 // ============================================================================
 
 `timescale 1ns / 1ps
 
 module top_tb;
 
-    localparam int DATA_WIDTH = 8;
-    localparam int DEPTH      = 256;
-    localparam int ADDR_WIDTH = $clog2(DEPTH);
-    localparam time CLK_PERIOD = 20ns;
+    localparam time CLK_PERIOD = 20ns;          // 50 MHz clock
+    localparam int  DEBOUNCE_MS = 1;            // Use 1ms debounce for simulation speed
 
-    logic                   clk;
-    logic                   rst_n;
-    logic                   we;
-    logic [ADDR_WIDTH-1:0]  addr;
-    logic [DATA_WIDTH-1:0]  wdata;
-    logic [DATA_WIDTH-1:0]  rdata;
+    logic clk;
+    logic rst_n;
+    logic key;
+    logic led_g;
+    logic led_y;
+    logic led_r;
 
     int passed = 0;
     int failed = 0;
 
     top #(
-        .DATA_WIDTH (DATA_WIDTH),
-        .DEPTH      (DEPTH),
-        .ADDR_WIDTH (ADDR_WIDTH)
+        .DEBOUNCE_MS (DEBOUNCE_MS)
     ) dut (
         .clk   (clk),
         .rst_n (rst_n),
-        .we    (we),
-        .addr  (addr),
-        .wdata (wdata),
-        .rdata (rdata)
+        .key   (key),
+        .led_g (led_g),
+        .led_y (led_y),
+        .led_r (led_r)
     );
 
     initial clk = 1'b0;
     always #(CLK_PERIOD / 2) clk = ~clk;
 
-    task automatic tick();
-        @(posedge clk);
+    // Wait for the debounce circuit to settle after a key change
+    // CNT_MAX = 50 MHz * DEBOUNCE_MS / 1000; add margin for reset + sync
+    task automatic wait_debounce();
+        repeat (50_000 * DEBOUNCE_MS + 100) @(posedge clk);
     endtask
 
-    task automatic write_mem(
-        input logic [ADDR_WIDTH-1:0] a,
-        input logic [DATA_WIDTH-1:0] d
-    );
-        we    = 1'b1;
-        addr  = a;
-        wdata = d;
-        tick();
-        we    = 1'b0;
+    // Simulate a full button press-and-release cycle
+    task automatic press_key();
+        key = 1'b1;
+        wait_debounce();
+        key = 1'b0;
+        wait_debounce();
     endtask
 
-    task automatic read_mem(
-        input  logic [ADDR_WIDTH-1:0] a,
-        output logic [DATA_WIDTH-1:0] d
+    task automatic check_leds(
+        input string desc,
+        input logic exp_g,
+        input logic exp_y,
+        input logic exp_r
     );
-        we   = 1'b0;
-        addr = a;
-        tick();
-        d = rdata;
-    endtask
-
-    task automatic check_eq(
-        input logic [DATA_WIDTH-1:0] actual,
-        input logic [DATA_WIDTH-1:0] expected,
-        input string               desc
-    );
-        if (actual === expected) begin
-            $display("  PASS: %s (0x%0h)", desc, actual);
+        if (led_g === exp_g && led_y === exp_y && led_r === exp_r) begin
+            $display("  PASS: %s (G=%b Y=%b R=%b)", desc, led_g, led_y, led_r);
             passed++;
         end else begin
-            $error("  FAIL: %s - got 0x%0h, expected 0x%0h", desc, actual, expected);
+            $error("  FAIL: %s - got G=%b Y=%b R=%b, expected G=%b Y=%b R=%b",
+                   desc, led_g, led_y, led_r, exp_g, exp_y, exp_r);
             failed++;
         end
     endtask
 
-    logic [DATA_WIDTH-1:0] read_data;
-
     initial begin
-        $display("=== Top SRAM Testbench ===\n");
+        $display("=== Traffic Light Controller Testbench ===\n");
 
+        key = 1'b0;
+
+        // Reset: should default to GREEN
         rst_n = 1'b0;
-        we    = 1'b0;
-        addr  = '0;
-        wdata = '0;
-
-        repeat (3) tick();
+        repeat (3) @(posedge clk);
         rst_n = 1'b1;
-        tick();
+        @(posedge clk);
+        check_leds("Reset -> GREEN", 1'b1, 1'b0, 1'b0);
 
-        check_eq(rdata, '0, "Read data zero after reset");
+        // Press key once -> YELLOW
+        press_key();
+        check_leds("Press 1 -> YELLOW", 1'b0, 1'b1, 1'b0);
 
-        write_mem(8'd10, 8'hA5);
-        read_mem(8'd10, read_data);
-        check_eq(read_data, 8'hA5, "Single-address write/read");
+        // Press key again -> RED
+        press_key();
+        check_leds("Press 2 -> RED", 1'b0, 1'b0, 1'b1);
 
-        write_mem(8'd0,   8'h11);
-        write_mem(8'd1,   8'h22);
-        write_mem(8'd255, 8'hFF);
+        // Press key again -> GREEN
+        press_key();
+        check_leds("Press 3 -> GREEN", 1'b1, 1'b0, 1'b0);
 
-        read_mem(8'd0,   read_data);
-        check_eq(read_data, 8'h11, "Address 0 readback");
+        // Press two more times to verify full cycle
+        press_key();
+        check_leds("Press 4 -> YELLOW", 1'b0, 1'b1, 1'b0);
 
-        read_mem(8'd1,   read_data);
-        check_eq(read_data, 8'h22, "Address 1 readback");
+        press_key();
+        check_leds("Press 5 -> RED", 1'b0, 1'b0, 1'b1);
 
-        read_mem(8'd255, read_data);
-        check_eq(read_data, 8'hFF, "Boundary address 255 readback");
+        // Hold key low and verify state stays in RED
+        repeat (100) @(posedge clk);
+        check_leds("Idle RED (no press)", 1'b0, 1'b0, 1'b1);
 
-        write_mem(8'd10, 8'h5A);
-        read_mem(8'd10, read_data);
-        check_eq(read_data, 8'h5A, "Overwrite existing location");
-
-        write_mem(8'd20, 8'hCD);
-        read_mem(8'd20, read_data);
-        check_eq(read_data, 8'hCD, "New location after overwrite");
-
-        read_mem(8'd10, read_data);
-        check_eq(read_data, 8'h5A, "Unrelated location unchanged");
-
-        write_mem(8'd30, 8'hCD);
-        read_mem(8'd30, read_data);
-        check_eq(read_data, 8'hCD, "Address 30 write/read");
-        addr = 8'd30;
-        we   = 1'b0;
-        repeat (2) tick();
-        check_eq(rdata, 8'hCD, "Read data holds during idle cycles at same address");
+        // One more press back to GREEN
+        press_key();
+        check_leds("Press 6 -> GREEN", 1'b1, 1'b0, 1'b0);
 
         $display("\n=== Results: %0d passed, %0d failed ===", passed, failed);
         if (failed == 0) begin

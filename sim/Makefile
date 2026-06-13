@@ -1,5 +1,5 @@
 # ============================================================================
-# SRAM Top — Simulation Makefile
+# Traffic Light Top — Simulation Makefile
 #
 # Tool support:
 #   make sim            — compile and run with iverilog
@@ -19,7 +19,7 @@ SRC_DIR      = ../rtl
 TB_DIR       = ../tb
 BUILD_DIR    = build
 
-RTL_FILES    = $(SRC_DIR)/sram.sv $(SRC_DIR)/top.sv
+RTL_FILES    = $(SRC_DIR)/debounce.sv $(SRC_DIR)/edge_detect.sv $(SRC_DIR)/top.sv
 TB_FILES     = $(TB_DIR)/top_tb.sv
 VCD_FILE     = $(TOP).vcd
 
