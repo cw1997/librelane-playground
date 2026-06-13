@@ -1,10 +1,11 @@
 # librelane-playground
 
-A minimal SystemVerilog SRAM wrapper project for **ASIC** (LibreLane) and future **FPGA** flows. The design exposes a parameterized synchronous SRAM interface at the top level and uses a behavioral memory model suitable for simulation and synthesis.
+A minimal SystemVerilog traffic light controller for **ASIC** (LibreLane) and future **FPGA** flows. The design cycles through GREEN → YELLOW → RED on each button press, with on-chip debounce and edge detection.
 
 ## Features
 
-- Parameterized SRAM: configurable `DATA_WIDTH` (default 8 bit) and `DEPTH` (default 256 entries)
+- Button-controlled traffic light state machine (three LEDs)
+- On-chip debounce (configurable, default 10 ms) and positive edge detection
 - Single clock domain, asynchronous active-low reset
 - Self-checking Icarus Verilog testbench
 - Verilator lint target
@@ -13,7 +14,7 @@ A minimal SystemVerilog SRAM wrapper project for **ASIC** (LibreLane) and future
 ## Directory Layout
 
 ```
-rtl/          SystemVerilog RTL (top.sv, sram.sv)
+rtl/          SystemVerilog RTL (top.sv, debounce.sv, edge_detect.sv)
 tb/           Simulation testbenches
 sim/          Simulation Makefile (iverilog, Verilator lint)
 syn/          Timing constraints (top.sdc)
@@ -25,16 +26,18 @@ scripts/      Utility scripts (optional)
 
 Top module: `top`
 
-| Port    | Direction | Width           | Description                    |
-|---------|-----------|-----------------|--------------------------------|
-| `clk`   | input     | 1               | System clock                   |
-| `rst_n` | input     | 1               | Asynchronous reset, active low |
-| `we`    | input     | 1               | Write enable (high = write)    |
-| `addr`  | input     | ADDR_WIDTH      | Address bus                    |
-| `wdata` | input     | DATA_WIDTH      | Write data                     |
-| `rdata` | output    | DATA_WIDTH      | Registered read data           |
+| Port    | Direction | Width | Description                    |
+|---------|-----------|-------|--------------------------------|
+| `clk`   | input     | 1     | System clock                   |
+| `rst_n` | input     | 1     | Asynchronous reset, active low |
+| `key`   | input     | 1     | Button input                   |
+| `led_g` | output    | 1     | Green LED (active high)        |
+| `led_y` | output    | 1     | Yellow LED (active high)       |
+| `led_r` | output    | 1     | Red LED (active high)          |
 
-Default parameters: `DATA_WIDTH = 8`, `DEPTH = 256`, `ADDR_WIDTH = $clog2(DEPTH)`.
+Default parameter: `DEBOUNCE_MS = 10`.
+
+State transitions: GREEN → (key press) → YELLOW → (key press) → RED → (key press) → GREEN
 
 ## Prerequisites
 
@@ -71,7 +74,7 @@ Configuration files:
 
 ## FPGA Flow (Future)
 
-Pin constraints (`.xdc` / `.qsf`) are not included yet. When targeting an FPGA board, add vendor constraints under `fpga/` and map the SRAM bus to board I/O or internal block RAM as needed.
+Pin constraints (`.xdc` / `.qsf`) are not included yet. When targeting an FPGA board, add vendor constraints under `fpga/` and map the button/LED I/O as needed.
 
 ## License
 
