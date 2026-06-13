@@ -19,7 +19,7 @@ module debounce #(
 
     localparam int CNT_MAX_INT = CLK_FREQ * DEBOUNCE_MS / 1000;
     localparam int CNT_W       = $clog2(CNT_MAX_INT + 1);
-    localparam logic [CNT_W-1:0] CNT_MAX = CNT_MAX_INT;
+    localparam logic [CNT_W-1:0] CNT_MAX = CNT_W'(CNT_MAX_INT);
 
     logic [1:0] sync;                         // Synchronizer flip-flops
 
