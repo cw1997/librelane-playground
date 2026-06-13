@@ -42,7 +42,7 @@ sim-vcd: sim
 # Verilator lint (no simulation code generation)
 # ------------------------------------------------------------------
 lint:
-	$(VERILATOR) --lint-only --sv $(RTL_FILES)
+	$(VERILATOR) --lint-only --sv --top-module $(TOP_MODULE) $(RTL_FILES)
 
 # ------------------------------------------------------------------
 # Clean
